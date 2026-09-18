@@ -48,6 +48,6 @@ S25 Ultra (Python 3.14, aarch64), digit-for-digit against the container run at c
 ## Credit
 
 Chad Edward Holland. Instrument design and reference code: Claude (Anthropic).
-Original architecture sketch that this replaces: GPT.
+Original evaluation-harness architecture that this replaces, and the moral-status framework it is discussed alongside: GPT (OpenAI).
 
 *Vincit Omnia Veritas.*
