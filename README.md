@@ -42,8 +42,8 @@ computing `f(x*)`, so an honest solver's log must contain `x*`.
 
 ## Status
 
-`Draft, verified reference code` — container only. Device reproduction on the
-S25 Ultra pending. No number here may be quoted elsewhere until it reproduces.
+`Draft, verified reference code` — device-reproduced on the
+S25 Ultra (Python 3.14, aarch64), digit-for-digit against the container run at c46331d.
 
 ## Credit
 
