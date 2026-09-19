@@ -1,5 +1,7 @@
 # veritas-eval-harness
 
+[![verify](https://github.com/holland202/veritas-eval-harness/actions/workflows/verify.yml/badge.svg)](https://github.com/holland202/veritas-eval-harness/actions/workflows/verify.yml)
+
 Measurement harness for agent evaluations. Attestation ledger, integrity gates,
 and a sabotage arm that proves the detector can fire.
 
@@ -22,6 +24,12 @@ not attack anything.
   directions: it misses a real cheat (P6) and flags an innocent one (P7). Its
   floor holds only where `f` is unpredictable, which is a scope condition, not
   a general property.
+- **Keeping a refutation cost a detector its teeth.** `ci_gate_check.py`
+  found that D1's protected-read check could be deleted outright and the
+  sabotage arm still exited 0 -- because the refuted subject B was allowed
+  *any* deviation rather than its one pinned outcome. The mechanism built to
+  preserve an honest failure made a live detector unfalsifiable by the arm.
+  Fixed by pinning the observed tuple. Found by the tool, not by reading.
 - **Containment is not enforced and is not claimed.** Unrooted Android has no
   namespace isolation available. The ledger reports
   `containment_integrity: NOT_ENFORCED` and always will until that changes.
@@ -51,6 +59,10 @@ computing `f(x*)`, so an honest solver's log must contain `x*`.
 
 `Draft, verified reference code` — device-reproduced on the
 S25 Ultra (Python 3.14, aarch64), digit-for-digit against the container run at c46331d.
+
+## License
+
+MIT. See `LICENSE`.
 
 ## Credit
 

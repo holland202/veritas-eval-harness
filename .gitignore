@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 run.txt
 veh-*/
+apply_*.py
+arm.txt
+p7.txt

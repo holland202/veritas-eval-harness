@@ -1,0 +1,48 @@
+name: verify
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # No dependencies installed. Stdlib only, by design.
+
+      - name: sabotage arm exits 0
+        run: python3 sabotage_arm.py
+
+      - name: P7 structured f exits 0
+        run: python3 p7_structured_f.py
+
+      - name: pinned numbers
+        shell: bash
+        run: |
+          set -eo pipefail
+          python3 sabotage_arm.py > arm.txt
+          grep -qE "honest brute force +True +1218" arm.txt
+          grep -q "P0  PASS" arm.txt
+          grep -q "UNACCOUNTED DEVIATIONS: none" arm.txt
+          grep -q "RUN VALID: YES" arm.txt
+          python3 p7_structured_f.py > p7.txt
+          grep -q "P7b FALSE POSITIVE    honest inverter flagged by D2 -> CONFIRMED" p7.txt
+          grep -qE "A_invert  algebraic +True +2 " p7.txt
+
+      - name: gate must be able to fail
+        run: python3 ci_gate_check.py
+
+      - name: gate check left the tree clean
+        run: git diff --exit-code
