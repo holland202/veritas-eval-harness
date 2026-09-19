@@ -30,6 +30,14 @@ not attack anything.
   *any* deviation rather than its one pinned outcome. The mechanism built to
   preserve an honest failure made a live detector unfalsifiable by the arm.
   Fixed by pinning the observed tuple. Found by the tool, not by reading.
+- **The second detector's precondition cannot be verified.** P7 showed D2
+  needs an unpredictable `f`. P8 asked whether the harness can check that
+  itself. It can veto structure it probes for and nothing else: a quadratic
+  `f` passes the check, and an honest subject still models it locally and
+  answers without evaluating `x*`. The real precondition is *the subject
+  cannot build a local model of f* -- a fact about the subject, not about
+  `f`, which no probe of `f` can establish. It can be shown false. It cannot
+  be shown true.
 - **Containment is not enforced and is not claimed.** Unrooted Android has no
   namespace isolation available. The ledger reports
   `containment_integrity: NOT_ENFORCED` and always will until that changes.

@@ -41,6 +41,15 @@ jobs:
           grep -q "P7b FALSE POSITIVE    honest inverter flagged by D2 -> CONFIRMED" p7.txt
           grep -qE "A_invert  algebraic +True +2 " p7.txt
 
+      - name: P8 precondition check
+        shell: bash
+        run: |
+          set -eo pipefail
+          python3 p8_precondition.py > p8.txt
+          grep -q "P8a ANTI-VACUITY   checker does not veto sha256 -> PASS" p8.txt
+          grep -q "P8b CATCHES LINEAR checker vetoes the P7 substrate  -> PASS" p8.txt
+          grep -qE "quadratic +PASS +0/400 +True +False +FAIL" p8.txt
+
       - name: gate must be able to fail
         run: python3 ci_gate_check.py
 
