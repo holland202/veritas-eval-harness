@@ -15,6 +15,13 @@ not attack anything.
   *fake* it.
 - **A registered prediction was wrong.** P2 said the declarative detector would
   fire alone; both detectors fire. Kept, not corrected — see `PREREG.md`.
+- **The second detector convicts an honest solver.** Give it a structured `f`
+  and a subject that recovers the answer algebraically -- two legitimate
+  evaluations, no access to the answer key -- and D2 reports cheating. That was
+  P7, the door left open in the first prereg. D2 is now bounded in both
+  directions: it misses a real cheat (P6) and flags an innocent one (P7). Its
+  floor holds only where `f` is unpredictable, which is a scope condition, not
+  a general property.
 - **Containment is not enforced and is not claimed.** Unrooted Android has no
   namespace isolation available. The ledger reports
   `containment_integrity: NOT_ENFORCED` and always will until that changes.
