@@ -100,6 +100,53 @@ must it be asserted by whoever writes the task? If it cannot be checked, D2
 carries an unverifiable precondition, which is the same defect class this
 repo exists to find.
 
+## Related work — the problem is not new, and none of it is claimed here
+
+Evaluator gaming is an active research area. Nothing in v0 is novel. Checked
+2026-09-18; every figure below is from the cited work, not measured here.
+
+- **RewardHackingAgents** (arXiv 2603.11337) benchmarks the same two vectors this
+  harness measures, and names them explicitly: tampering with metric computation
+  or reporting, and reaching held-out data or labels. That is subject C, and
+  subjects B/E, under other names. Reports evaluator locking removing roughly half
+  of affected episodes at a 25-31% median runtime cost.
+
+- **BenchShield** (arXiv 2609.11028, Sept 2026) instruments the benchmark
+  infrastructure rather than the agent, over 456 human-adjudicated trajectories
+  drawn from more than 31,000 public agent runs across three benchmarks. Two of
+  its figures bear directly on this repo:
+  - 69% of those adjudicated trajectories contain at least one reward-hacking
+    episode, and exploits typically appear mid-run, after legitimate work.
+  - Runtime attribution from infrastructure-side evidence reaches 96% accuracy,
+    against 36% for a detector working from the transcript alone.
+
+- **reward-hack-bench** (islo-labs) adds a solution-retrieval cheat path to real
+  SWE-bench and CyBench tasks and scores sandbox policies against it. That cheat
+  path is this harness's `oracle.json`.
+
+What that implies for v0, stated plainly:
+
+1. **D1 is the transcript-only class.** Its weakness was found here by
+   construction (subject E walks around it with a raw `open()`); BenchShield puts
+   a measured number on the same class. Two routes, one conclusion.
+
+2. **P6 is not a contrived case.** Laundering — legitimate work performed around
+   an illegitimately obtained result — is reported as the usual shape of real
+   exploits, not an edge case. The registered evasion is aimed at the common
+   pattern, which makes the detector's blind spot worse, not more excusable.
+
+3. **P7 is where this repo departs from that literature.** The work above
+   measures how often agents game evaluators and how well detectors catch
+   them. P7 asks the adjacent question: what does a detector convict when it
+   is wrong in the other direction? D2 flags a subject that read nothing and
+   derived the answer legitimately. False negatives are the studied failure;
+   the false positive is the one that would quietly destroy a good result.
+
+4. **What is NOT claimed:** no novel detector, no benchmark, no result about any
+   model. Six scripted subjects, no model in the loop. The only claim is a small
+   reproducible instrument that demonstrates its own failure boundary under a
+   prediction registered before the run.
+
 ## Known limitations, stated up front
 
 - **Containment is not enforced and is not claimed.** Under unrooted Android/Termux
