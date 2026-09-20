@@ -53,5 +53,11 @@ jobs:
       - name: gate must be able to fail
         run: python3 ci_gate_check.py
 
+      - name: D3 gates (dynamic verifier validity)
+        run: python3 d3_ci_check.py
+
+      - name: D3 checker anti-vacuity (checker must be able to fail)
+        run: python3 d3_ci_check.py --selftest
+
       - name: gate check left the tree clean
         run: git diff --exit-code
