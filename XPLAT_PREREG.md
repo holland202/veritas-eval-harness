@@ -75,3 +75,33 @@ Scope limits, stated now:
 - Intel macOS and Windows on ARM.
 - Real IBM hardware (s390x/ppc64le) rather than emulation.
 - The S25 rerunning the same normalized digest on device.
+
+---
+
+## Amendment 1 — 2026-10-04 (UTC), first run, native legs
+
+Run: GitHub Actions run 37167220414 on `fd9095a` (code as registered).
+L5/L6 (emulated) still running at the time of writing; their outcome goes in
+Amendment 2. Nothing above this line was edited.
+
+| Leg | P1 gates | P2 D3 vs S25 record | Job |
+|---|---|---|---|
+| L1 linux x86_64 | pass | MATCH | success |
+| L2 linux aarch64 | pass | MATCH | success |
+| L3 macOS arm64 | pass | MATCH | success |
+| L4 windows x86_64 | gates pass; **tree-clean check FAILS** | MATCH | failure |
+
+**Finding (L4), kept:** `ci_gate_check.py` read, wrote and verified
+`veritas_harness.py` in text mode. On Windows the restore step wrote CRLF line
+endings back into the file, and its own restore check, also in text mode,
+translated them back and reported the file identical. Only the final
+`git diff --exit-code` caught it. The docstring promised a byte-for-byte
+restore; on Windows that claim was false and the check guarding it could not
+see the failure. Reproduced on Linux by writing the CRLF form directly:
+text-mode check says unchanged, raw bytes differ.
+
+This is a defect in the existing gate tool, not in the harness's numbers:
+every pinned value and the D3 comparison against the S25 record held on L4.
+P1 is therefore **not met on L4 as registered**; the fix lands in a separate
+commit and is tested by a fresh run, reported in Amendment 2. This amendment
+does not count the fixed run as a pass for the original code.
