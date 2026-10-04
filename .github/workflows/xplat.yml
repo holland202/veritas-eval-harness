@@ -1,0 +1,96 @@
+name: xplat
+
+# Cross-platform determinism pilot. Registration: XPLAT_PREREG.md (committed
+# alone, before this file). Leaves verify.yml untouched.
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  native:
+    name: ${{ matrix.leg }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { leg: L1-linux-x86_64,   os: ubuntu-latest }
+          - { leg: L2-linux-aarch64,  os: ubuntu-24.04-arm }
+          - { leg: L3-macos-arm64,    os: macos-latest }
+          - { leg: L4-windows-x86_64, os: windows-latest }
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - name: keep line endings as committed (so pinned file hashes mean the same thing)
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: run leg
+        shell: bash
+        env:
+          PY: python
+        run: bash .github/xplat_leg.sh "$RUNNER_TEMP/${{ matrix.leg }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.leg }}
+          path: ${{ runner.temp }}/${{ matrix.leg }}
+
+  emulated:
+    name: ${{ matrix.leg }} (QEMU, not IBM hardware)
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { leg: L5-s390x-bigendian, arch: s390x }
+          - { leg: L6-ppc64le,         arch: ppc64le }
+    steps:
+      - uses: actions/checkout@v4
+      - run: mkdir -p "${{ runner.temp }}/out"
+      - uses: uraimo/run-on-arch-action@v3
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ubuntu24.04
+          dockerRunArgs: --volume "${{ runner.temp }}/out:/out"
+          install: |
+            apt-get update -q
+            apt-get install -q -y python3 git
+          shell: /bin/bash
+          run: PY=python3 bash .github/xplat_leg.sh "/out/${{ matrix.leg }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.leg }}
+          path: ${{ runner.temp }}/out/${{ matrix.leg }}
+
+  compare:
+    name: P2+P3 across legs
+    needs: [native, emulated]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - uses: actions/download-artifact@v4
+        with:
+          path: legs
+          pattern: L*
+      - name: comparator must be able to fail
+        run: python xplat_digest.py --selftest
+      - name: legs present (absent = VOID, per registration)
+        run: |
+          for l in L1-linux-x86_64 L2-linux-aarch64 L3-macos-arm64 L4-windows-x86_64 L5-s390x-bigendian L6-ppc64le; do
+            if [ -d "legs/$l" ]; then echo "PRESENT $l  $(cat legs/$l/platform.info 2>/dev/null)"; else echo "VOID    $l"; fi
+          done
+      - name: compare every leg against the S25 record and each other
+        run: python xplat_digest.py compare d3_device_v3.txt legs/*/
