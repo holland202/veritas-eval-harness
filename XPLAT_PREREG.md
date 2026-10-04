@@ -105,3 +105,56 @@ every pinned value and the D3 comparison against the S25 record held on L4.
 P1 is therefore **not met on L4 as registered**; the fix lands in a separate
 commit and is tested by a fresh run, reported in Amendment 2. This amendment
 does not count the fixed run as a pass for the original code.
+
+---
+
+## Amendment 2 — 2026-10-04 (UTC), all legs, both runs
+
+Nothing above this line was edited. Both runs: GitHub Actions, PR #1.
+
+**Run A** — 37167220414 on `fd9095a` (code as registered).
+**Run B** — 37168220258 on `c353ce4` (`ci_gate_check.py` byte-exact fix from Amendment 1).
+
+Platforms as reported by each leg (`platform.platform()`, `sys.byteorder`, Python):
+
+| Leg | Reported | Byte order | Python |
+|---|---|---|---|
+| L1 | Linux x86_64 (Azure) | little | 3.14.7 |
+| L2 | Linux aarch64 (Azure) | little | 3.14.7 |
+| L3 | macOS 26.6.2 arm64 | little | 3.14.7 |
+| L4 | Windows Server 2025 AMD64 | little | 3.14.7 |
+| L5 | Linux s390x, QEMU | **big** | 3.12.3 |
+| L6 | Linux ppc64le, QEMU | little | 3.12.3 |
+
+No leg was VOID. Comparator selftest passed in both runs (agrees on identical
+input; reports one altered byte in each of `arm.txt` and `d3.txt`).
+
+| | Run A (as registered) | Run B (fixed gate tool) |
+|---|---|---|
+| **P1** gates | holds on L1, L2, L3, L5, L6; **fails on L4** (Amendment 1) | holds on all six |
+| **P2** D3 vs S25 record | MATCH on all six | MATCH on all six |
+| **P3** cross-leg sha256 | one digest per output across all six | same |
+| **P4** big-endian (L5) | holds | holds |
+
+P3 digests (normalized, both runs, identical):
+
+    arm.txt  3aaa2c5ea80a
+    d3.txt   4341eb0202c8
+    p7.txt   bc1bc5a54d16
+    p8.txt   865e70fdf16a
+
+**Verdict as registered:** P2, P3 and P4 hold. P1 does **not** hold for the
+code as registered (L4); it holds after the separate fix in `c353ce4`. The
+fixed run is evidence for the fixed code only.
+
+**Exploratory, not registered (do not cite as a prediction):**
+- The emulated legs ran Python 3.12.3 and the native legs 3.14.7; outputs
+  still agreed byte-for-byte. The registration did not predict across
+  interpreter versions.
+- The same four digests were produced before push in Claude's container
+  (x86_64, Python 3.13), a seventh platform outside the registered table.
+
+**Still not shown:** real IBM hardware (L5/L6 are emulation of the
+instruction sets), Intel macOS, Windows on ARM, and the S25 computing the
+same normalized digests itself. The S25 enters only through the committed
+`d3_device_v3.txt`, which every leg matched.
