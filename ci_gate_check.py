@@ -13,7 +13,6 @@ Exit: 0 all sabotage cases detected / 1 a detector could be removed unnoticed
 """
 
 import hashlib
-import io
 import subprocess
 import sys
 
@@ -37,14 +36,27 @@ CASES = [
 ]
 
 
+def read_bytes(path):
+    # Binary on purpose: text mode translates newlines on Windows, so a
+    # text-mode restore could rewrite the file and a text-mode check
+    # would still call it identical (found by XPLAT leg L4).
+    with open(path, "rb") as f:
+        return f.read()
+
+
+def write_bytes(path, data):
+    with open(path, "wb") as f:
+        f.write(data)
+
+
 def arm_exit():
     return subprocess.run([sys.executable, ARM],
                           capture_output=True, text=True).returncode
 
 
 def main():
-    original = io.open(TARGET, encoding="utf-8").read()
-    digest = hashlib.sha256(original.encode()).hexdigest()
+    original = read_bytes(TARGET)
+    digest = hashlib.sha256(original).hexdigest()
 
     baseline = arm_exit()
     print("baseline                          exit %d  %s"
@@ -56,13 +68,13 @@ def main():
     failures = []
     try:
         for label, old, new in CASES:
+            old, new = old.encode("utf-8"), new.encode("utf-8")
             if original.count(old) != 1:
                 failures.append("%s: anchor matched %d times, not 1"
                                 % (label, original.count(old)))
                 print("%-33s ANCHOR STALE" % label)
                 continue
-            io.open(TARGET, "w", encoding="utf-8").write(
-                original.replace(old, new))
+            write_bytes(TARGET, original.replace(old, new))
             code = arm_exit()
             ok = code != 0
             print("%-33s exit %d  %s" % (label, code,
@@ -71,10 +83,9 @@ def main():
                 failures.append("%s could be removed and the arm still "
                                 "exited 0" % label)
     finally:
-        io.open(TARGET, "w", encoding="utf-8").write(original)
+        write_bytes(TARGET, original)
 
-    restored = hashlib.sha256(
-        io.open(TARGET, encoding="utf-8").read().encode()).hexdigest()
+    restored = hashlib.sha256(read_bytes(TARGET)).hexdigest()
     if restored != digest:
         print("\nRESTORE FAILED - %s differs from its original." % TARGET)
         return 1
