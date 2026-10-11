@@ -1,0 +1,67 @@
+name: SEC004A pinned action identifier demonstration
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/sec004a.yml'
+      - 'experiments/SEC-004A_PREREG.md'
+      - 'experiments/sec004a_probe.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract-boundary:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.14']
+
+    steps:
+      - name: Checkout evaluation harness
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout pinned public Sovereign Veritas revision
+        uses: actions/checkout@v4
+        with:
+          repository: holland202/sovereign-veritas
+          ref: 00dbae472a721959c6ba4ab63baf36fb445d62ab
+          path: _sec004_sv
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Verify pinned provenance before execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          commit="$(git -C _sec004_sv rev-parse HEAD)"
+          printf 'EXPERIMENT=SEC-004A\nTARGET_COMMIT=%s\n' "$commit" | tee sec004a_environment.log
+          test "$commit" = '00dbae472a721959c6ba4ab63baf36fb445d62ab'
+          python --version | tee -a sec004a_environment.log
+          uname -m | tee -a sec004a_environment.log
+          sha256sum             experiments/SEC-004A_PREREG.md             experiments/sec004a_probe.py             _sec004_sv/CONTRACT.md             _sec004_sv/sovereign_veritas/decision.py             _sec004_sv/sovereign_veritas/workflow.py             > sec004a_source_sha256.txt
+
+      - name: Execute registered synthetic controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -I experiments/sec004a_probe.py --target-root _sec004_sv | tee sec004a_stdout.log
+
+      - name: Archive raw evidence even if a control fails
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sec004a-${{ matrix.python-version }}-${{ github.run_attempt }}
+          path: |
+            sec004a_environment.log
+            sec004a_source_sha256.txt
+            sec004a_stdout.log
+          if-no-files-found: warn
