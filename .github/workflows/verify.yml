@@ -59,5 +59,8 @@ jobs:
       - name: D3 checker anti-vacuity (checker must be able to fail)
         run: python3 d3_ci_check.py --selftest
 
+      - name: EMG-001 manifest gate - passing and failing controls
+        run: python3 -m unittest discover -s tests -p 'test_evidence_manifest_gate.py' -v
+
       - name: gate check left the tree clean
         run: git diff --exit-code
